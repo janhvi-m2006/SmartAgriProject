@@ -5,9 +5,9 @@ from datetime import datetime
 app = Flask(__name__)
 import google.generativeai as genai
 
-GEMINI_API_KEY = "AQ.Ab8RN6JXU5dpEGMsdvqfkyzEwNEqx4gBGJ7ZwSfrxC4whtv19Q"
+import os
 genai.configure(api_key=GEMINI_API_KEY)
-
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 @app.route('/chat', methods=['GET', 'POST'])
