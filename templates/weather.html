@@ -1,8 +1,40 @@
-<h1>Weather Search</h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather</title>
+</head>
+<body>
+
+<h2>🌦 Current Weather</h2>
 
 <form method="POST">
-    <input type="text" name="city" placeholder="Enter City">
-    <button type="submit">Search</button>
+    <input type="text" name="city" placeholder="Enter City Name" required>
+    <button type="submit">Get Weather</button>
 </form>
 
-<h3>{{ result|safe }}</h3>
+<br>
+
+{% if result %}
+
+<p><b>City:</b> {{ result.city }}</p>
+
+<p><b>Temperature:</b>
+{{ result.temp }} °C
+</p>
+
+<p><b>Humidity:</b>
+{{ result.humidity }} %
+</p>
+
+<p><b>Condition:</b>
+{{ result.condition }}
+</p>
+
+{% endif %}
+
+<br>
+
+<a href="/dashboard">⬅ Back to Dashboard</a>
+
+</body>
+</html>
