@@ -1,6 +1,55 @@
 from flask import Flask, render_template, request
-
+import requests
+import random
+from datetime import datetime
 app = Flask(__name__)
+import google.generativeai as genai
+
+GEMINI_API_KEY = "AQ.Ab8RN6JXU5dpEGMsdvqfkyzEwNEqx4gBGJ7ZwSfrxC4whtv19Q"
+genai.configure(api_key=GEMINI_API_KEY)
+
+model = genai.GenerativeModel("gemini-2.5-flash")
+
+@app.route('/chat', methods=['GET', 'POST'])
+def chat():
+
+    answer = ""
+
+    if request.method == "POST":
+
+        question = request.form.get("question")
+
+        try:
+
+            prompt = f"""
+You are a Smart Agriculture Assistant.
+
+Give answer EXACTLY in this format:
+
+🌾 Crop:
+[Crop Name]
+
+📌 Short Explanation:
+[2-3 lines explanation]
+
+✅ Tips:
+1. First Tip
+2. Second Tip
+3. Third Tip
+
+Keep answer short and farmer-friendly.
+Use line breaks between all sections.
+
+Question: {question}
+"""
+
+            response = model.generate_content(prompt)
+            answer = response.text
+
+        except Exception as e:
+            answer = f"Error: {e}"
+
+    return render_template("chat.html", answer=answer)
 
 # Login Page
 @app.route('/')
@@ -15,40 +64,41 @@ def dashboard():
 
 
 # Weather
-
-
 @app.route('/weather', methods=['GET', 'POST'])
 def weather():
 
-    result = ""
+    result = None
 
     if request.method == "POST":
 
         city = request.form['city']
 
-        api_key = "YOUR_ACTUAL_API_KEY"
+        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1"
 
-        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
+        geo_data = requests.get(geo_url).json()
 
-        data = requests.get(url).json()
+        if "results" in geo_data:
 
-        if data.get("cod") == 200:
+            latitude = geo_data["results"][0]["latitude"]
+            longitude = geo_data["results"][0]["longitude"]
 
-            temp = data["main"]["temp"]
-            humidity = data["main"]["humidity"]
-            condition = data["weather"][0]["description"]
+            weather_url = (
+                f"https://api.open-meteo.com/v1/forecast?"
+                f"latitude={latitude}&longitude={longitude}"
+                f"&current=temperature_2m,relative_humidity_2m"
+            )
 
-            result = f"""
-            City: {city}<br>
-            Temperature: {temp}°C<br>
-            Humidity: {humidity}%<br>
-            Condition: {condition}
-            """
-        else:
-            result = "City not found"
+            weather_data = requests.get(weather_url).json()
 
-    return render_template('weather.html', result=result)
-    print(data)
+            result = {
+                "city": city.title(),
+                "temp": weather_data["current"]["temperature_2m"],
+                "humidity": weather_data["current"]["relative_humidity_2m"],
+                "condition": "Current Weather"
+            }
+
+    return render_template("weather.html", result=result)
+
 # Crop Recommendation
 @app.route('/crop', methods=['GET', 'POST'])
 def crop():
@@ -68,10 +118,7 @@ def crop():
         else:
             crop_name = "Soybean"
 
-    return render_template(
-        'crop_recommend.html',
-        crop=crop_name
-    )
+    return render_template('crop_recommend.html', crop=crop_name)
 
 
 # Fertilizer Suggestion
@@ -93,10 +140,7 @@ def fertilizer():
         else:
             fertilizer_name = "Organic Compost"
 
-    return render_template(
-        'fertilizer.html',
-        fertilizer=fertilizer_name
-    )
+    return render_template('fertilizer.html', fertilizer=fertilizer_name)
 
 
 # Disease Detection
@@ -112,36 +156,32 @@ def disease():
         if image:
             result = "Image Uploaded Successfully"
 
-    return render_template(
-        'disease.html',
-        result=result
-    )
-
+    return render_template('disease.html', result=result)
 
 # Mandi Prices
 @app.route('/prices', methods=['GET', 'POST'])
 def prices():
 
-    price = ""
+    result = None
 
     if request.method == "POST":
 
-        crop = request.form['crop'].lower()
+        crop = request.form.get('crop')
+        city = request.form.get('city')
 
-        if crop == "soybean":
-            price = "₹4500 / Quintal"
-        elif crop == "wheat":
-            price = "₹2600 / Quintal"
-        elif crop == "rice":
-            price = "₹3000 / Quintal"
-        else:
-            price = "Price Not Available"
+        if crop and city:
 
-    return render_template(
-        'prices.html',
-        price=price
-    )
+            price = random.randint(15, 80)
 
+            result = {
+                "crop": crop.title(),
+                "city": city.title(),
+                "price": f"₹{price} / Kg",
+                "source": "SmartAgri Market Data",
+                "updated": datetime.now().strftime("%d-%m-%Y %H:%M")
+            }
+
+    return render_template("prices.html", result=result)
 
 if __name__ == '__main__':
     app.run(debug=True)
