@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chatbot</title>
+</head>
+<body>
+
+<h2>🤖 Smart Agri AI Chatbot</h2>
+
+<form method="POST">
+    <input type="text" name="question"
+           placeholder="Ask your farming question"
+           required>
+
+    <button type="submit">Send</button>
+</form>
+
+{% if answer %}
+<hr>
+<h3>Answer:</h3>
+<pre>{{ answer }}</pre>
+{% endif %}
+
+</body>
+</html>
