@@ -2,14 +2,19 @@ from flask import Flask, render_template, request
 import requests
 import random
 from datetime import datetime
-app = Flask(__name__)
+import os
 import google.generativeai as genai
 
-import os
-genai.configure(api_key=GEMINI_API_KEY)
+app = Flask(__name__)
+
+# ---------------- GEMINI SETUP ----------------
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=GEMINI_API_KEY)
+
 model = genai.GenerativeModel("gemini-2.5-flash")
 
+
+# ---------------- AI CHATBOT ----------------
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
 
@@ -20,25 +25,15 @@ def chat():
         question = request.form.get("question")
 
         try:
-
             prompt = f"""
 You are a Smart Agriculture Assistant.
 
-Give answer EXACTLY in this format:
-
+Answer in this format:
 🌾 Crop:
-[Crop Name]
-
-📌 Short Explanation:
-[2-3 lines explanation]
-
+📌 Explanation:
 ✅ Tips:
-1. First Tip
-2. Second Tip
-3. Third Tip
 
-Keep answer short and farmer-friendly.
-Use line breaks between all sections.
+Keep answer short and simple.
 
 Question: {question}
 """
@@ -46,24 +41,25 @@ Question: {question}
             response = model.generate_content(prompt)
             answer = response.text
 
-        except Exception as e:
-            answer = f"Error: {e}"
+        except Exception:
+            answer = "⚠ AI service temporarily unavailable. Please try again later."
 
     return render_template("chat.html", answer=answer)
 
-# Login Page
+
+# ---------------- LOGIN ----------------
 @app.route('/')
 def login():
     return render_template('login.html')
 
 
-# Dashboard
+# ---------------- DASHBOARD ----------------
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
 
-# Weather
+# ---------------- WEATHER ----------------
 @app.route('/weather', methods=['GET', 'POST'])
 def weather():
 
@@ -73,33 +69,32 @@ def weather():
 
         city = request.form['city']
 
-        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1"
+        try:
+            geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1"
+            geo_data = requests.get(geo_url).json()
 
-        geo_data = requests.get(geo_url).json()
+            if "results" in geo_data:
 
-        if "results" in geo_data:
+                lat = geo_data["results"][0]["latitude"]
+                lon = geo_data["results"][0]["longitude"]
 
-            latitude = geo_data["results"][0]["latitude"]
-            longitude = geo_data["results"][0]["longitude"]
+                weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m"
 
-            weather_url = (
-                f"https://api.open-meteo.com/v1/forecast?"
-                f"latitude={latitude}&longitude={longitude}"
-                f"&current=temperature_2m,relative_humidity_2m"
-            )
+                weather_data = requests.get(weather_url).json()
 
-            weather_data = requests.get(weather_url).json()
+                result = {
+                    "city": city.title(),
+                    "temp": weather_data["current"]["temperature_2m"],
+                    "humidity": weather_data["current"]["relative_humidity_2m"]
+                }
 
-            result = {
-                "city": city.title(),
-                "temp": weather_data["current"]["temperature_2m"],
-                "humidity": weather_data["current"]["relative_humidity_2m"],
-                "condition": "Current Weather"
-            }
+        except:
+            result = None
 
     return render_template("weather.html", result=result)
 
-# Crop Recommendation
+
+# ---------------- CROP ----------------
 @app.route('/crop', methods=['GET', 'POST'])
 def crop():
 
@@ -121,7 +116,7 @@ def crop():
     return render_template('crop_recommend.html', crop=crop_name)
 
 
-# Fertilizer Suggestion
+# ---------------- FERTILIZER ----------------
 @app.route('/fertilizer', methods=['GET', 'POST'])
 def fertilizer():
 
@@ -143,7 +138,7 @@ def fertilizer():
     return render_template('fertilizer.html', fertilizer=fertilizer_name)
 
 
-# Disease Detection
+# ---------------- DISEASE ----------------
 @app.route('/disease', methods=['GET', 'POST'])
 def disease():
 
@@ -158,7 +153,8 @@ def disease():
 
     return render_template('disease.html', result=result)
 
-# Mandi Prices
+
+# ---------------- MARKET PRICE ----------------
 @app.route('/prices', methods=['GET', 'POST'])
 def prices():
 
@@ -177,11 +173,12 @@ def prices():
                 "crop": crop.title(),
                 "city": city.title(),
                 "price": f"₹{price} / Kg",
-                "source": "SmartAgri Market Data",
                 "updated": datetime.now().strftime("%d-%m-%Y %H:%M")
             }
 
     return render_template("prices.html", result=result)
 
+
+# ---------------- RUN ----------------
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
