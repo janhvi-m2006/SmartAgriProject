@@ -1,3 +1,19 @@
+<img width="576" height="411" alt="Screenshot 2026-06-21 113200" src="https://github.com/user-attachments/assets/51067808-6514-4d78-a544-b0e132ae728c" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 🌾 Smart Agri AI System
 
 Smart Agri AI System is a Flask-based web application designed to help farmers make smarter agricultural decisions using modern technology. It integrates Weather forecasting, Market price estimation, and an AI-powered chatbot into a single platform.
