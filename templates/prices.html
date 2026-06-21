@@ -1,8 +1,23 @@
 <h1>Mandi Price Checker</h1>
 
 <form method="POST">
-    <input type="text" name="crop" placeholder="Enter Crop Name">
-    <button type="submit">Check</button>
+
+    <input type="text" name="crop" placeholder="Enter Crop/Sabji Name" required>
+    <br><br>
+
+    <input type="text" name="city" placeholder="Enter City" required>
+    <br><br>
+
+    <button type="submit">Get Price</button>
+
 </form>
 
-<h3>{{ price }}</h3>
+{% if result %}
+<h3>Market Price Result</h3>
+
+<p><b>Crop:</b> {{ result.crop }}</p>
+<p><b>City:</b> {{ result.city }}</p>
+<p><b>Price:</b> {{ result.price }}</p>
+<p><b>Updated:</b> {{ result.updated }}</p>
+
+{% endif %}
